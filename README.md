@@ -1,16 +1,19 @@
-# app
+# Shoe app
 
-A new Flutter project.
+แอปแชทที่สร้างด้วย Flutter และ Firebase รองรับการส่งข้อความและรูปภาพแบบเรียลไทม์
 
-## Getting Started
+## 🔧 ฟีเจอร์
 
-This project is a starting point for a Flutter application.
+- ✅ ส่งข้อความแบบเรียลไทม์ด้วย Firestore
+- ✅ ส่งรูปภาพจากแกลเลอรีด้วย Firebase Storage
+- ✅ แสดงสถานะอ่าน/ยังไม่อ่าน
+- ✅ รองรับผู้ใช้หลายคนผ่าน Firebase Auth
 
-A few resources to get you started if this is your first Flutter project:
+## 🚀 วิธีติดตั้ง
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+1. คลิก “Clone” หรือดาวน์โหลด ZIP จาก GitHub
+2. เปิดโปรเจกต์ใน VS Code หรือ Android Studio
+3. รันคำสั่ง:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter pub get
