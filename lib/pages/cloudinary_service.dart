@@ -10,24 +10,22 @@ class CloudinaryService {
 
   final ImagePicker _picker = ImagePicker();
 
-  /// เลือกรูปจาก Gallery หรือ Camera
   Future<File?> pickImage({bool fromCamera = false}) async {
     final XFile? pickedFile = await _picker.pickImage(
       source: fromCamera ? ImageSource.camera : ImageSource.gallery,
-      imageQuality: 80, // ลดขนาดไฟล์
+      imageQuality: 80,
     );
     if (pickedFile == null) return null;
     return File(pickedFile.path);
   }
 
-  /// อัปโหลดไฟล์ไป Cloudinary
   Future<String?> uploadImage(File file) async {
     try {
       final uri =
-          Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+          Uri.parse('https://api.cloudinary.com/v1_1/dtryzzo7e/image/upload');
 
       final request = http.MultipartRequest('POST', uri)
-        ..fields['upload_preset'] = uploadPreset
+        ..fields['upload_preset'] = 'flutter_upload'
         ..files.add(await http.MultipartFile.fromPath('file', file.path));
 
       final response = await request.send();
@@ -35,7 +33,7 @@ class CloudinaryService {
 
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
-        return data['secure_url']; // URL ของรูป
+        return data['secure_url'];
       } else {
         print('Cloudinary upload failed: ${res.body}');
         return null;
@@ -46,7 +44,6 @@ class CloudinaryService {
     }
   }
 
-  /// เลือกแล้วอัปโหลด พร้อมคืน URL
   Future<String?> pickAndUploadImage({bool fromCamera = false}) async {
     final file = await pickImage(fromCamera: fromCamera);
     if (file == null) return null;

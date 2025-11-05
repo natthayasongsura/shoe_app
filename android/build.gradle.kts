@@ -29,7 +29,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.4.2")
+        classpath("com.android.tools.build:gradle:8.1.1") // ✅ syntax แบบ Kotlin
         classpath("com.google.gms:google-services:4.3.15")
     }
 }

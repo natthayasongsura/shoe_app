@@ -1,14 +1,17 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/product.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'cloudinary_service.dart'; // import สำหรับ Cloudinary
 
 class CheckoutPage extends StatefulWidget {
   final List<QueryDocumentSnapshot>? cartItems;
-  final Product? product; // ✅ เปลี่ยนเป็น nullable
+  final Product? product;
 
   const CheckoutPage({
-    super.key, // ✅ ใช้ super parameter
+    super.key,
     this.cartItems,
     this.product,
   });
@@ -23,11 +26,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
   String appliedCoupon = '';
   bool couponValid = true;
 
+  File? _slipImage; // สำหรับเก็บรูปสลิปชั่วคราว
+  String? _slipUrl; // สำหรับเก็บ URL หลังอัปโหลด
+
+  final CloudinaryService _cloudinaryService = CloudinaryService();
+
   Future<void> updateProductStock(List<Map<String, dynamic>> items) async {
     final batch = FirebaseFirestore.instance.batch();
 
     for (final item in items) {
-      // ดึง productId จาก Firestore
       final productQuery = await FirebaseFirestore.instance
           .collection('products')
           .where('name', isEqualTo: item['name'])
@@ -92,7 +99,45 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
+  // ฟังก์ชันเลือกสลิปจากแกลเลอรี
+  Future<void> pickSlipImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _slipImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  // ฟังก์ชันอัปโหลดไป Cloudinary
+  Future<void> uploadSlip() async {
+    if (_slipImage == null) return;
+
+    final url = await _cloudinaryService.uploadImage(_slipImage!);
+    if (url != null) {
+      setState(() {
+        _slipUrl = url;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('อัปโหลดสลิปสำเร็จ')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('อัปโหลดสลิปไม่สำเร็จ')),
+      );
+    }
+  }
+
   Future<void> placeOrder() async {
+    if (_slipImage != null && _slipUrl == null) {
+      // ยังไม่ได้อัปโหลดสลิป
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('กรุณาอัปโหลดสลิปก่อนสั่งซื้อ')),
+      );
+      return;
+    }
+
     final items = <Map<String, dynamic>>[];
 
     if (widget.product != null) {
@@ -111,7 +156,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         });
       }
 
-      // ✅ เรียกฟังก์ชันลดสต๊อกหลังจากรวบรวมสินค้าทั้งหมด
       await updateProductStock(items);
     }
 
@@ -121,7 +165,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final userName = userDoc.data()?['name'] ?? 'ลูกค้าไม่ทราบ';
 
     await FirebaseFirestore.instance.collection('orders').add({
-      'userId': FirebaseAuth.instance.currentUser?.uid,
+      'userId': uid,
       'username': userName,
       'items': items,
       'totalPrice': getTotal(),
@@ -129,6 +173,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       'discountPercent': discountPercent,
       'status': 'รอจัดส่ง',
       'timestamp': FieldValue.serverTimestamp(),
+      'slipUrl': _slipUrl, // เก็บ URL สลิปจาก Cloudinary
     });
 
     // ล้างตะกร้า
@@ -207,6 +252,33 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         style: TextStyle(color: Colors.red),
                       ),
                     ),
+                  const SizedBox(height: 16),
+                  // ปุ่มอัปโหลดสลิป
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: pickSlipImage,
+                          icon: const Icon(Icons.image),
+                          label: const Text('เลือกสลิป'),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: uploadSlip,
+                        child: const Text('อัปโหลดสลิป'),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green),
+                      ),
+                    ],
+                  ),
+                  if (_slipImage != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Image.file(_slipImage!, height: 120),
+                    ),
                 ],
               ),
             ),
@@ -215,12 +287,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 6,
-                    offset: const Offset(0, -3),
-                  ),
+                      color: Colors.black12,
+                      blurRadius: 6,
+                      offset: Offset(0, -3)),
                 ],
               ),
               child: Column(

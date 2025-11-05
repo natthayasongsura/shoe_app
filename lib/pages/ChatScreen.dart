@@ -182,7 +182,16 @@ class _ChatScreenState extends State<ChatScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(displayName),
+                      Text(
+                        displayName, // หรือ widget.userEmail ถ้าอยากแสดงอีเมล
+                        style: const TextStyle(
+                          fontSize: 14, // ลดขนาดตัวอักษร
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1, // จำกัด 1 บรรทัด
+                        overflow: TextOverflow.ellipsis, // ถ้าเกินจะขึ้น ...
+                      ),
                       if (widget.userEmail != null)
                         Row(
                           children: [
@@ -267,17 +276,18 @@ class _ChatScreenState extends State<ChatScreen> {
                             if (!isMe)
                               Text(senderName,
                                   style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
+                                      fontSize: 9,
+                                      color: Color.fromARGB(255, 255, 255, 255),
                                       fontWeight: FontWeight.bold)),
-                            if (imageUrl != null)
+                            if (imageUrl != null &&
+                                imageUrl.toString().isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),
                                 child: ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: Image.network(imageUrl,
-                                        width: 200,
-                                        height: 200,
+                                        width: 100,
+                                        height: 100,
                                         fit: BoxFit.cover)),
                               ),
                             if (text.isNotEmpty)
@@ -310,8 +320,9 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Row(
                 children: [
                   IconButton(
-                      icon: const Icon(Icons.image, color: Colors.black),
-                      onPressed: _sendImage),
+                    icon: const Icon(Icons.image, color: Colors.black),
+                    onPressed: _sendImage,
+                  ),
                   Expanded(
                     child: TextField(
                       controller: _chatController,
