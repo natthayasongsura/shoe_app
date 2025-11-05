@@ -73,6 +73,26 @@ class _AdminHomePageState extends State<AdminHomePage>
   late TabController _tabController;
   final ImagePicker _picker = ImagePicker();
   final cloudinary = CloudinaryService();
+  String _formatPrice(dynamic value) {
+    if (value is num) {
+      return value.toStringAsFixed(0);
+    } else if (value is String) {
+      final parsed = num.tryParse(value);
+      return parsed != null ? parsed.toStringAsFixed(0) : '0';
+    }
+    return '0';
+  }
+
+  double _calculateTotal(Map<String, dynamic> data) {
+    if (data['items'] == null) return 0;
+    double total = 0;
+    for (var item in data['items']) {
+      final price = (item['price'] ?? 0).toDouble();
+      final quantity = (item['quantity'] ?? 1).toDouble();
+      total += price * quantity;
+    }
+    return total;
+  }
 
   @override
   void initState() {
@@ -323,7 +343,10 @@ class _AdminHomePageState extends State<AdminHomePage>
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('รวม: ฿${data['totalPrice'] ?? 0}'),
+                    Text(
+                      'รวม: ฿${_formatPrice(_calculateTotal(data))}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     Text('สถานะ: ${data['status']}',
                         style: TextStyle(
                             color: _getStatusColor(data['status']),

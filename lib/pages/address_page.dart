@@ -12,8 +12,11 @@ class AddressPage extends StatefulWidget {
 class _AddressPageState extends State<AddressPage> {
   final user = FirebaseAuth.instance.currentUser;
 
-  Future<void> _showAddressDialog(
-      {String? docId, String? type, String? address}) async {
+  Future<void> _showAddressDialog({
+    String? docId,
+    String? type,
+    String? address,
+  }) async {
     final typeController = TextEditingController(text: type ?? '');
     final addressController = TextEditingController(text: address ?? '');
 
@@ -26,34 +29,36 @@ class _AddressPageState extends State<AddressPage> {
           docId == null ? 'เพิ่มที่อยู่ใหม่' : 'แก้ไขที่อยู่',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: typeController,
-              decoration: InputDecoration(
-                labelText: 'ประเภทที่อยู่ (บ้าน/ที่ทำงาน)',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                focusedBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.black),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: typeController,
+                decoration: InputDecoration(
+                  labelText: 'ประเภทที่อยู่ (บ้าน/ที่ทำงาน)',
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.black),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: addressController,
-              decoration: InputDecoration(
-                labelText: 'ที่อยู่',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                focusedBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.black),
+              const SizedBox(height: 12),
+              TextField(
+                controller: addressController,
+                decoration: InputDecoration(
+                  labelText: 'ที่อยู่',
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.black),
+                  ),
                 ),
+                maxLines: 3,
               ),
-              maxLines: 3,
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -64,7 +69,7 @@ class _AddressPageState extends State<AddressPage> {
             onPressed: () async {
               final newType = typeController.text.trim();
               final newAddress = addressController.text.trim();
-              if (newType.isEmpty || newAddress.isEmpty) return;
+              if (newType.isEmpty || newAddress.isEmpty || user == null) return;
 
               final collection = FirebaseFirestore.instance
                   .collection('users')
@@ -81,7 +86,6 @@ class _AddressPageState extends State<AddressPage> {
                 await collection.doc(docId).update({
                   'type': newType,
                   'address': newAddress,
-                  'updatedAt': Timestamp.now(),
                 });
               }
 
@@ -100,6 +104,7 @@ class _AddressPageState extends State<AddressPage> {
   }
 
   Future<void> _deleteAddress(String docId) async {
+    if (user == null) return;
     await FirebaseFirestore.instance
         .collection('users')
         .doc(user!.uid)
@@ -143,74 +148,76 @@ class _AddressPageState extends State<AddressPage> {
           final docs = snapshot.data?.docs ?? [];
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: docs.length + 1,
-            itemBuilder: (context, index) {
-              if (index == docs.length) {
-                return ElevatedButton.icon(
-                  onPressed: () => _showAddressDialog(),
-                  icon: const Icon(Icons.add, color: Colors.white),
-                  label: const Text('เพิ่มที่อยู่ใหม่'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    minimumSize: const Size.fromHeight(50),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                );
-              }
-
-              final doc = docs[index];
-              final data = doc.data() as Map<String, dynamic>;
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.shade300,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
+              padding: const EdgeInsets.all(16),
+              itemCount: docs.length + 1,
+              itemBuilder: (context, index) {
+                if (index == docs.length) {
+                  // ✅ ปุ่มเพิ่มที่อยู่ใหม่
+                  return ElevatedButton.icon(
+                    onPressed: () => _showAddressDialog(),
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    label: const Text('เพิ่มที่อยู่ใหม่'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
-                  ],
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.black,
-                    child: Icon(
-                      data['type'].toString().toLowerCase() == 'บ้าน'
-                          ? Icons.home
-                          : Icons.work,
-                      color: Colors.white,
-                    ),
-                  ),
-                  title: Text(data['type'] ?? '',
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(data['address'] ?? '',
-                      maxLines: 2, overflow: TextOverflow.ellipsis),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.black87),
-                        onPressed: () => _showAddressDialog(
-                          docId: doc.id,
-                          type: data['type'],
-                          address: data['address'],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.redAccent),
-                        onPressed: () => _deleteAddress(doc.id),
+                  );
+                }
+
+                // ✅ ส่วนนี้ Dart จะมั่นใจว่า doc และ data ถูก assign แน่นอน
+                final doc = docs[index];
+                final data = doc.data() as Map<String, dynamic>;
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade300,
+                        blurRadius: 5,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
-                ),
-              );
-            },
-          );
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.black,
+                      child: Icon(
+                        data['type']?.toString().toLowerCase() == 'บ้าน'
+                            ? Icons.home
+                            : Icons.work,
+                        color: Colors.white,
+                      ),
+                    ),
+                    title: Text(data['type'] ?? 'ไม่ระบุ',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(data['address'] ?? 'ไม่ระบุข้อมูล',
+                        maxLines: 2, overflow: TextOverflow.ellipsis),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.black87),
+                          onPressed: () => _showAddressDialog(
+                            docId: doc.id,
+                            type: data['type'],
+                            address: data['address'],
+                          ),
+                        ),
+                        IconButton(
+                          icon:
+                              const Icon(Icons.delete, color: Colors.redAccent),
+                          onPressed: () => _deleteAddress(doc.id),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              });
         },
       ),
     );
