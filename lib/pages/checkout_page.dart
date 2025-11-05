@@ -244,41 +244,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ),
                     ),
                   ),
-                  if (!couponValid)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Text(
-                        'โค้ดคูปองไม่ถูกต้องหรือหมดอายุ',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                  // ปุ่มอัปโหลดสลิป
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: pickSlipImage,
-                          icon: const Icon(Icons.image),
-                          label: const Text('เลือกสลิป'),
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: uploadSlip,
-                        child: const Text('อัปโหลดสลิป'),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green),
-                      ),
-                    ],
-                  ),
-                  if (_slipImage != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Image.file(_slipImage!, height: 120),
-                    ),
                 ],
               ),
             ),
